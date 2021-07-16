@@ -7,7 +7,7 @@ from table import make_table
 class Highscore:
     """Highscore Class"""
 
-    filename = '../resources/highscore.csv'
+    filename = os.path.dirname(__file__) + '/../resources/highscore.csv'
     highscore = []  # List of Dictionary entries with following keys: 'Puzzle', 'Name', 'Time', 'Moves'
 
     def __init__(self):
