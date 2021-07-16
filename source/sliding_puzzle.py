@@ -9,6 +9,21 @@ def walk(string: str, step: int) -> str:
         yield string[i:i+step]
 
 
+def join(row: List[List[str]]) -> List[str]:
+    """Join together a row of puzzle pieces into a complete list of lines"""
+    res = []
+    for i in range(len(row[0])):
+        res.append('│')
+        for piece in row:
+            res[i] += piece[i]
+    return res
+
+
+def bordered(lines: List[str]) -> List[str]:
+    """Put a border after every line"""
+    return [line + '│' for line in lines]
+
+
 @dataclass
 class PiecePosition:
     """Position of a piece with its index"""
@@ -126,21 +141,35 @@ class Puzzle:
                 i += 1
         return True
 
-    def _join(self, row: List[PuzzlePiece]) -> List[str]:
-        """Join together a row of puzzle pieces into a complete list of lines."""
-        res = []
-        for i in range(len(row[0].data)):
-            res.append('')
-            for piece in row:
-                res[i] += piece.data[i]
-
+    def build_border(self, puzzle: int, piece: int, *, start: str, middle: str, end: str) -> str:
+        """Build puzzle border line."""
+        res = start + '─' * puzzle + end
+        border_count = 1
+        for i in range(piece, (puzzle - piece)):
+            if i % piece == 0:
+                pos = i + border_count
+                res = res[:pos] + middle + res[pos + 1:]
+                border_count += 1
         return res
 
     def draw(self) -> str:
         """Draw the puzzle in its current state."""
-        output = []
-        for row in self.rows:
-            output.extend(self._join(row))
+        nbr_separators = len(self.rows) - 1
+        piece_width = self.rows[0][0].width
+        puzzle_width = piece_width * len(self.rows[0]) + nbr_separators
+
+        # build the top border
+        output = [self.build_border(puzzle_width, piece_width, start='┌', middle='┬', end='┐')]
+
+        # build content
+        for index, row in enumerate(self.rows):
+            row = [bordered(piece.data) for piece in row]
+            output.extend(join(row))
+            if index < len(self.rows) - 1:
+                output.extend([self.build_border(puzzle_width, piece_width, start="├", middle="┼", end="┤")])
+
+        # add bottom border
+        output += [self.build_border(puzzle_width, piece_width, start='└', middle="┴", end='┘')]
 
         return '\n'.join(output)
 
@@ -155,8 +184,8 @@ class Puzzle:
     def _get_empty_piece_position(self) -> PiecePosition:
         x, y, index = [
             (x, y, piece.index)
-            for x, row in enumerate(self.rows)
-            for y, piece in enumerate(row)
+            for y, row in enumerate(self.rows)
+            for x, piece in enumerate(row)
             if piece.empty
         ][0]
         return PiecePosition(x=x, y=y, index=index)
@@ -167,7 +196,7 @@ class Puzzle:
         # return if empty piece is on the first row
         if empty_pos.y == 0:
             return
-        self._swap_pieces(x1=empty_pos.x, y1=empty_pos.y, x2=empty_pos.x - 1, y2=empty_pos.y)
+        self._swap_pieces(x1=empty_pos.x, y1=empty_pos.y, x2=empty_pos.x, y2=empty_pos.y - 1)
 
     def move_down(self) -> None:
         """Move the piece below the empty piece up"""
@@ -176,7 +205,7 @@ class Puzzle:
         if empty_pos.y == len(self.rows) - 1:
             return
         # swap the empty piece with the target piece
-        self._swap_pieces(x1=empty_pos.x, y1=empty_pos.y, x2=empty_pos.x + 1, y2=empty_pos.y)
+        self._swap_pieces(x1=empty_pos.x, y1=empty_pos.y, x2=empty_pos.x, y2=empty_pos.y + 1)
 
     def move_right(self) -> None:
         """Move the piece at the right of the empty piece to the left"""
@@ -184,7 +213,7 @@ class Puzzle:
         # return if empty piece is on the last column
         if empty_pos.x == len(self.rows[0]) - 1:
             return
-        self._swap_pieces(x1=empty_pos.x, y1=empty_pos.y, x2=empty_pos.x, y2=empty_pos.y + 1)
+        self._swap_pieces(x1=empty_pos.x, y1=empty_pos.y, x2=empty_pos.x + 1, y2=empty_pos.y)
 
     def move_left(self) -> None:
         """Move the piece at the left of the empty piece to the right"""
@@ -193,7 +222,7 @@ class Puzzle:
         if empty_pos.x == 0:
             return
         # swap the empty piece with the target piece
-        self._swap_pieces(x1=empty_pos.x, y1=empty_pos.y, x2=empty_pos.x, y2=empty_pos.y - 1)
+        self._swap_pieces(x1=empty_pos.x, y1=empty_pos.y, x2=empty_pos.x - 1, y2=empty_pos.y)
 
     def _swap_pieces(self, x1: int, y1: int, x2: int, y2: int) -> None:
-        self.rows[x1][y1], self.rows[x2][y2] = self.rows[x2][y2], self.rows[x1][y1]
+        self.rows[y1][x1], self.rows[y2][x2] = self.rows[y2][x2], self.rows[y1][x1]
