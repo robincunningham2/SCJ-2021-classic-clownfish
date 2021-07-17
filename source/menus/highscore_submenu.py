@@ -50,4 +50,4 @@ class HighScoreSubMenu(Menu):
 
     def click(self, term: Interface) -> Menu:
         """Handle enter key presses."""
-        return Game(self.puzzle)  # TODO: fetch puzzle from name
+        return Game(self.puzzle)
