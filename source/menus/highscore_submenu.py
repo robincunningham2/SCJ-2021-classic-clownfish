@@ -4,7 +4,7 @@ from blessed import Terminal as Interface
 from game import Game
 from highscore import Highscore
 
-from .utils import Menu
+from .utils import Menu, set_string_length
 
 if TYPE_CHECKING:
     # Interface is a subclass of Terminal, importing it directly would cause circular imports
@@ -39,7 +39,11 @@ class HighScoreSubMenu(Menu):
             if i == 2:
                 color = term.color_rgb(169, 113, 66)
 
-            rendered.append(term.move_x(4) + color(f'{i + 1}. {highscore["Name"]}'))
+            rendered.append(
+                term.move_x(4)
+                + color(set_string_length(f'{i + 1}. {highscore["Name"]}', term.width - 36))
+                + f'{highscore["Moves"]} moves / {highscore["Time"]} seconds'
+            )
 
         rendered.append(term.move_yx(term.height - 3, 4) + 'Press enter to play this puzzle')
         return '\n'.join(rendered)
